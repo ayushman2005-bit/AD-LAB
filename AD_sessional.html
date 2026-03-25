@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Generator – Lab Exercise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Source+Serif+4:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="AD_sessional.css"/>
+</head>
+<body>
+
+<h1>Resume Generator</h1>
+<p class="lab-meta">Lab Exercise &nbsp;|&nbsp; HTML &amp; CSS &nbsp;|&nbsp; Fill in the fields below and click Generate</p>
+
+<div class="form-box">
+  <h2>Personal Information</h2>
+  <div class="photo-upload-box">
+    <div class="photo-preview" id="photo-box">
+      <span>Click to<br/>upload<br/>photo</span>
+      <img id="photo-img" alt="Your photo"/>
+      <input type="file" id="photo-input" accept="image/*" onchange="loadPhoto(this)"/>
+    </div>
+    <div class="photo-note">
+      Upload a passport-size photo.<br/>
+      Recommended: square image, JPG or PNG.<br/>
+      It will appear on the top-right of your resume.
+    </div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Full Name</label><input type="text" id="name" placeholder="Riya Patel"/></div>
+    <div class="field"><label>Job Title / Role</label><input type="text" id="title" placeholder="Computer Science Student"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Email</label><input type="text" id="email" placeholder="riya@email.com"/></div>
+    <div class="field"><label>Phone</label><input type="text" id="phone" placeholder="+91 98765 43210"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Location</label><input type="text" id="location" placeholder="Bhubaneswar, Odisha"/></div>
+    <div class="field"><label>LinkedIn / Website</label><input type="text" id="link" placeholder="linkedin.com/in/riya"/></div>
+  </div>
+
+  <h2 class="section-gap">Objective / Summary</h2>
+  <div class="row">
+    <div class="field"><label>Write 2-3 lines about yourself</label>
+      <textarea id="summary" placeholder="Final year B.Tech student with interest in web development. Looking for internship opportunities to apply academic knowledge in real-world projects."></textarea>
+    </div>
+  </div>
+
+  <h2 class="section-gap">Education</h2>
+  <div class="row">
+    <div class="field"><label>Degree</label><input type="text" id="edu1-degree" placeholder="B.Tech - Computer Science"/></div>
+    <div class="field"><label>College / University</label><input type="text" id="edu1-college" placeholder="KIIT University"/></div>
+    <div class="field" style="max-width:140px"><label>Year</label><input type="text" id="edu1-year" placeholder="2021 - 2025"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Degree / Board</label><input type="text" id="edu2-degree" placeholder="Class XII - PCM"/></div>
+    <div class="field"><label>School</label><input type="text" id="edu2-college" placeholder="DAV Public School"/></div>
+    <div class="field" style="max-width:140px"><label>Year</label><input type="text" id="edu2-year" placeholder="2021"/></div>
+  </div>
+
+  <h2 class="section-gap">Project</h2>
+  <div class="row">
+    <div class="field"><label>Project Name</label><input type="text" id="proj-title" placeholder="Student Attendance System"/></div>
+    <div class="field"><label>Tech Used</label><input type="text" id="proj-tech" placeholder="Python, Flask, MySQL"/></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Brief Description</label>
+      <textarea id="proj-desc" placeholder="Developed a web-based attendance management system for college with role-based login for teachers and students."></textarea>
+    </div>
+  </div>
+
+  <h2 class="section-gap">Skills</h2>
+  <div class="row">
+    <div class="field"><label>Skills (comma separated)</label>
+      <input type="text" id="skills" placeholder="HTML, CSS, JavaScript, Python, MySQL, Git"/>
+    </div>
+  </div>
+
+  <h2 class="section-gap">Achievements / Extra-curriculars</h2>
+  <div class="row">
+    <div class="field"><label>One achievement per line</label>
+      <textarea id="achievements" placeholder="1st prize - College Hackathon 2024&#10;Member, Coding Club KIIT&#10;Cleared TCS NQT with 85%ile"></textarea>
+    </div>
+  </div>
+
+  <button onclick="generate()">Generate Resume</button>
+</div>
+
+<div id="output"></div>
+<div class="print-btn-wrap" id="print-wrap">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<script>
+  function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  let photoSrc = '';
+  function loadPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      photoSrc = e.target.result;
+      const img = document.getElementById('photo-img');
+      img.src = photoSrc;
+      img.style.display = 'block';
+      document.querySelector('#photo-box span').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function generate() {
+    const name     = val('name') || 'Your Name';
+    const title    = val('title');
+    const email    = val('email');
+    const phone    = val('phone');
+    const location = val('location');
+    const link     = val('link');
+    const summary  = val('summary');
+
+    const d1d = val('edu1-degree'), d1c = val('edu1-college'), d1y = val('edu1-year');
+    const d2d = val('edu2-degree'), d2c = val('edu2-college'), d2y = val('edu2-year');
+    const pt  = val('proj-title'), ptech = val('proj-tech'), pd = val('proj-desc');
+    const skills = val('skills');
+    const ach = val('achievements');
+
+    const contacts = [email, phone, location, link].filter(Boolean).map(esc).join(' &nbsp;.&nbsp; ');
+    const skillPills = skills ? skills.split(',').map(s=>'<span class="r-skill">'+esc(s.trim())+'</span>').join('') : '';
+    const achLines = ach ? ach.split('\n').filter(l=>l.trim()).map(l=>'<div class="r-entry-desc" style="margin-bottom:4px">. '+esc(l.trim())+'</div>').join('') : '';
+
+    document.getElementById('output').innerHTML =
+      '<div class="r-header-wrap">' +
+        '<div class="r-header-info">' +
+          '<div class="r-name">'+esc(name)+'</div>' +
+          (title ? '<div class="r-role">'+esc(title)+'</div>' : '') +
+          (contacts ? '<div class="r-contacts">'+contacts+'</div>' : '') +
+        '</div>' +
+        (photoSrc ? '<img class="r-photo" src="'+photoSrc+'" alt="Photo"/>' : '') +
+      '</div>' +
+      '<hr class="r-line"/>' +
+
+      (summary ? '<div class="r-section-title">Objective</div><div class="r-summary">'+esc(summary)+'</div><hr class="r-thin"/>' : '') +
+
+      ((d1d||d1c) ?
+        '<div class="r-section-title">Education</div>' +
+        '<div class="r-entry"><div class="r-entry-top"><div>' +
+          '<div class="r-entry-title">'+esc(d1d)+'</div>' +
+          (d1c ? '<div class="r-entry-sub">'+esc(d1c)+'</div>' : '') +
+        '</div>'+(d1y ? '<div class="r-entry-date">'+esc(d1y)+'</div>' : '')+'</div></div>' +
+        ((d2d||d2c) ?
+          '<div class="r-entry"><div class="r-entry-top"><div>' +
+            '<div class="r-entry-title">'+esc(d2d)+'</div>' +
+            (d2c ? '<div class="r-entry-sub">'+esc(d2c)+'</div>' : '') +
+          '</div>'+(d2y ? '<div class="r-entry-date">'+esc(d2y)+'</div>' : '')+'</div></div>'
+        : '') +
+        '<hr class="r-thin"/>'
+      : '') +
+
+      ((pt||pd) ?
+        '<div class="r-section-title">Project</div>' +
+        '<div class="r-entry"><div class="r-entry-top">' +
+          '<div class="r-entry-title">'+esc(pt)+'</div>' +
+          (ptech ? '<div class="r-entry-date">'+esc(ptech)+'</div>' : '') +
+        '</div>' +
+        (pd ? '<div class="r-entry-desc">'+esc(pd)+'</div>' : '') +
+        '</div><hr class="r-thin"/>'
+      : '') +
+
+      (skillPills ? '<div class="r-section-title">Skills</div><div class="r-skills">'+skillPills+'</div><hr class="r-thin"/>' : '') +
+
+      (achLines ? '<div class="r-section-title">Achievements &amp; Activities</div>'+achLines : '');
+
+    document.getElementById('output').style.display = 'block';
+    document.getElementById('print-wrap').style.display = 'block';
+    document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
