@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Display System</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #222535;
+            --border: rgba(255,255,255,0.07);
+            --border2: rgba(255,255,255,0.12);
+            --text: #f0f2f8;
+            --muted: #7a7f96;
+            --hint: #4a4f66;
+            --amber: #f59e0b;
+            --amber-bg: rgba(245,158,11,0.1);
+            --green: #22c55e;
+            --green-bg: rgba(34,197,94,0.1);
+            --red: #ef4444;
+            --red-bg: rgba(239,68,68,0.1);
+            --blue: #3b82f6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+
+        .logo {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text);
+        }
+
+        .live-badge {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 11px; color: var(--green);
+            background: var(--green-bg);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 3px 8px; border-radius: 20px;
+        }
+
+        .live-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            animation: blink 1.6s ease-in-out infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        .header-stats { display: flex; gap: 10px; align-items: center; }
+
+        .stat-chip {
+            font-size: 12px; padding: 5px 12px;
+            border-radius: 20px; border: 1px solid var(--border2);
+            background: var(--surface2);
+            color: var(--muted);
+        }
+        .stat-chip b { color: var(--text); font-weight: 600; }
+        .stat-chip.urgent b { color: var(--amber); }
+
+        .server-form {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .server-form label { font-size: 11px; color: var(--hint); }
+        .server-form input {
+            font-size: 12px; padding: 5px 10px;
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            background: var(--surface2);
+            color: var(--text);
+            width: 170px;
+            outline: none;
+        }
+        .server-form input:focus { border-color: var(--blue); }
+
+        .refresh-btn {
+            font-size: 12px; padding: 5px 12px;
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            width: auto;
+        }
+        .refresh-btn:hover { background: var(--surface2); color: var(--text); }
+        .refresh-btn.spinning { animation: spin 0.6s linear; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Board ── */
+        .board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+            align-items: start;
+        }
+
+        .column {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .col-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .col-title { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); }
+        .col-badge {
+            margin-left: auto;
+            font-size: 11px; font-weight: 600;
+            padding: 2px 8px; border-radius: 20px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .order-list {
+            display: flex; flex-direction: column;
+            gap: 0;
+            padding: 12px;
+            gap: 10px;
+            min-height: 120px;
+        }
+
+        /* ── Order Card ── */
+        .order-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            transition: border-color 0.2s;
+            animation: appear 0.22s ease;
+        }
+        @keyframes appear { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+        .order-card.pending { border-left: 3px solid var(--amber); }
+        .order-card.done    { border-left: 3px solid var(--green); }
+        .order-card.late    { border-left: 3px solid var(--red); }
+
+        .order-card:hover { border-color: var(--border2); }
+
+        .card-top {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-tag {
+            font-size: 13px; font-weight: 700;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            padding: 3px 10px; border-radius: 6px;
+            color: var(--text);
+        }
+
+        .customer-name { font-size: 12px; color: var(--muted); }
+        .order-time { margin-left: auto; font-size: 11px; color: var(--hint); }
+
+        /* Timer bar */
+        .timer-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+        }
+        .timer-label { font-size: 11px; color: var(--muted); min-width: 50px; }
+        .timer-label.urgent { color: var(--red); font-weight: 600; }
+        .timer-track {
+            flex: 1; height: 3px; background: var(--border2);
+            border-radius: 2px; overflow: hidden;
+        }
+        .timer-fill { height: 100%; border-radius: 2px; transition: width 1s linear; }
+        .fill-ok   { background: var(--green); }
+        .fill-warn { background: var(--amber); }
+        .fill-late { background: var(--red); }
+
+        /* Items */
+        .items-wrap { margin-bottom: 10px; }
+        .item-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 0;
+            font-size: 13px; color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .item-row:last-child { border-bottom: none; }
+        .qty-pill {
+            font-size: 11px; font-weight: 700;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            padding: 1px 6px; color: var(--muted);
+            min-width: 28px; text-align: center;
+        }
+
+        /* Note */
+        .note {
+            font-size: 12px;
+            color: #c9a227;
+            background: rgba(201,162,39,0.08);
+            border-left: 2px solid var(--amber);
+            padding: 7px 10px;
+            margin-bottom: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Actions */
+        .mark-btn {
+            width: 100%; padding: 9px;
+            background: transparent;
+            border: 1px solid var(--border2);
+            border-radius: 7px;
+            font-size: 13px; font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .mark-btn:hover { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+
+        .done-badge {
+            text-align: center; font-size: 12px; font-weight: 600;
+            color: var(--green);
+            background: var(--green-bg);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 8px; border-radius: 7px;
+        }
+
+        /* Empty state */
+        .empty {
+            text-align: center; padding: 40px 16px;
+            color: var(--hint); font-size: 13px;
+        }
+
+        /* Sound toggle */
+        .sound-btn {
+            font-size: 12px; padding: 5px 10px;
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            background: transparent; color: var(--muted);
+            cursor: pointer; width: auto;
+        }
+        .sound-btn:hover { color: var(--text); }
+
+        /* Connection error */
+        .conn-error {
+            margin: 10px 20px; padding: 10px 14px;
+            background: var(--red-bg);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            font-size: 12px; color: #f87171;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .board { grid-template-columns: 1fr; }
+            header { flex-wrap: wrap; gap: 10px; }
+            .server-form { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <span class="logo">Kitchen Display</span>
+        <div class="live-badge"><span class="live-dot"></span> Live</div>
+    </div>
+
+    <div class="header-stats">
+        <div class="stat-chip urgent">Pending <b id="pendingCount">0</b></div>
+        <div class="stat-chip">Ready <b id="readyCount">0</b></div>
+        <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔔 Sound On</button>
+    </div>
+
+    <div class="server-form">
+        <label>Server</label>
+        <input type="text" id="serverInput" value="http://10.5.98.59:5000" />
+        <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">↻ Refresh</button>
+    </div>
+</header>
+
+<div class="conn-error" id="connError">
+    Cannot connect to server. Check your IP and make sure the server is running.
+</div>
+
+<main class="board">
+    <div class="column">
+        <div class="col-header">
+            <span class="col-dot" style="background:#f59e0b"></span>
+            <span class="col-title">COOKING</span>
+            <span class="col-badge" id="pendingColBadge">0</span>
+        </div>
+        <div id="pending-orders" class="order-list"></div>
+    </div>
+
+    <div class="column">
+        <div class="col-header">
+            <span class="col-dot" style="background:#22c55e"></span>
+            <span class="col-title">READY FOR PICKUP</span>
+            <span class="col-badge" id="readyColBadge">0</span>
+        </div>
+        <div id="completed-orders" class="order-list"></div>
+    </div>
+</main>
+
+<script>
+    let soundEnabled = true;
+    let lastOrderIds = new Set();
+    let audioCtx = null;
+
+    function getServer() {
+        return document.getElementById('serverInput').value.trim();
+    }
+
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('soundBtn').textContent = soundEnabled ? '🔔 Sound On' : '🔕 Sound Off';
+    }
+
+    function playNotification() {
+        if (!soundEnabled) return;
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(660, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch(e) {}
+    }
+
+    function getElapsed(timestamp) {
+        if (!timestamp) return { label: '', pct: 100, cls: 'ok' };
+        const mins = (Date.now() - new Date(timestamp).getTime()) / 60000;
+        const pct = Math.max(0, 100 - (mins / 20) * 100);
+        const cls = mins < 7 ? 'ok' : mins < 14 ? 'warn' : 'late';
+        const label = mins < 1 ? 'Just now' : Math.floor(mins) + 'm ago';
+        return { label, pct: Math.round(pct), cls };
+    }
+
+    function buildCard(order, isPending) {
+        const div = document.createElement('div');
+        const { label, pct, cls } = getElapsed(order.timestamp);
+        const isLate = cls === 'late' && isPending;
+
+        div.className = `order-card ${isPending ? (isLate ? 'late' : 'pending') : 'done'}`;
+
+        const itemsHTML = (order.items || []).map(i =>
+            `<div class="item-row"><span class="qty-pill">${i.qty}x</span>${i.name}</div>`
+        ).join('');
+
+        const noteHTML = order.instructions && order.instructions.trim()
+            ? `<div class="note">⚠ ${order.instructions}</div>` : '';
+
+        const timerHTML = isPending && label
+            ? `<div class="timer-row">
+                <span class="timer-label ${isLate ? 'urgent' : ''}">${label}</span>
+                <div class="timer-track">
+                  <div class="timer-fill fill-${cls}" style="width:${pct}%"></div>
+                </div>
+               </div>` : '';
+
+        const actionHTML = isPending
+            ? `<button class="mark-btn" onclick="completeOrder(${order.id})">✓ Mark as Ready</button>`
+            : `<div class="done-badge">✔ Ready for Service</div>`;
+
+        div.innerHTML = `
+            <div class="card-top">
+                <span class="table-tag">Table ${order.table}</span>
+                <span class="customer-name">${order.customer || 'Guest'}</span>
+                <span class="order-time">${order.time || label || 'Just now'}</span>
+            </div>
+            <div class="items-wrap">${itemsHTML}</div>
+            ${noteHTML}
+            ${timerHTML}
+            ${actionHTML}
+        `;
+        return div;
+    }
+
+    async function loadOrders() {
+        try {
+            const res = await fetch(getServer() + '/orders');
+            if (!res.ok) throw new Error('Bad response');
+            const data = await res.json();
+
+            document.getElementById('connError').style.display = 'none';
+
+            const pendingEl = document.getElementById('pending-orders');
+            const completedEl = document.getElementById('completed-orders');
+
+            const pScroll = pendingEl.scrollTop;
+            const cScroll = completedEl.scrollTop;
+
+            pendingEl.innerHTML = '';
+            completedEl.innerHTML = '';
+
+            let p = 0, r = 0;
+            const currentIds = new Set();
+
+            // Sort newest first
+            [...data].reverse().forEach(order => {
+                currentIds.add(order.id);
+                const isPending = order.status === 'pending';
+                pendingEl.appendChild && isPending
+                    ? (pendingEl.appendChild(buildCard(order, true)), p++)
+                    : (completedEl.appendChild(buildCard(order, false)), r++);
+            });
+
+            // Actually let's redo this correctly
+            pendingEl.innerHTML = '';
+            completedEl.innerHTML = '';
+            p = 0; r = 0;
+
+            [...data].reverse().forEach(order => {
+                const isPending = order.status === 'pending';
+                if (isPending) { pendingEl.appendChild(buildCard(order, true)); p++; }
+                else { completedEl.appendChild(buildCard(order, false)); r++; }
+            });
+
+            if (p === 0) pendingEl.innerHTML = '<div class="empty">No active orders</div>';
+            if (r === 0) completedEl.innerHTML = '<div class="empty">No completed orders yet</div>';
+
+            // Sound alert for new orders
+            const newOrders = [...currentIds].filter(id => !lastOrderIds.has(id));
+            if (newOrders.length > 0 && lastOrderIds.size > 0) playNotification();
+            lastOrderIds = currentIds;
+
+            document.getElementById('pendingCount').textContent = p;
+            document.getElementById('readyCount').textContent = r;
+            document.getElementById('pendingColBadge').textContent = p;
+            document.getElementById('readyColBadge').textContent = r;
+
+            pendingEl.scrollTop = pScroll;
+            completedEl.scrollTop = cScroll;
+
+        } catch (e) {
+            document.getElementById('connError').style.display = 'block';
+            console.error('Failed to fetch orders:', e);
+        }
+    }
+
+    async function completeOrder(id) {
+        try {
+            await fetch(`${getServer()}/orders/${id}/complete`, { method: 'POST' });
+            loadOrders();
+        } catch (e) { console.error(e); }
+    }
+
+    function manualRefresh() {
+        const btn = document.getElementById('refreshBtn');
+        btn.classList.add('spinning');
+        loadOrders().finally(() => {
+            setTimeout(() => btn.classList.remove('spinning'), 600);
+        });
+    }
+
+    setInterval(loadOrders, 3000);
+    loadOrders();
+</script>
+</body>
+</html>
